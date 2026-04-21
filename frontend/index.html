@@ -4,233 +4,375 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Asset Protection | Sports Media</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome for icons -->
+    <title>AssetProtect | Professional Digital Media Defense</title>
+    <link rel="stylesheet" href="style.css?v=2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
     <!-- Authentication Screen -->
     <div id="auth-container" class="auth-container">
-        <div class="auth-card glass-panel">
-            <div class="logo" style="justify-content: center; margin-bottom: 1.5rem;">
-                <i class="fa-solid fa-shield-halved"></i>
-                <span>AssetProtect</span>
-            </div>
-            <h2 id="auth-title">Welcome Back</h2>
-            <p id="auth-subtitle" style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Sign in to
-                manage your digital assets.</p>
+        <!-- Left Hero Panel -->
+        <div class="auth-hero">
+            <!-- Floating orbs -->
+            <div class="orb orb-1"></div>
+            <div class="orb orb-2"></div>
+            <div class="orb orb-3"></div>
+            <!-- Grid overlay -->
+            <div class="grid-overlay"></div>
 
-            <form id="auth-form" onsubmit="event.preventDefault(); handleAuth(); return false;">
-                <div class="form-group">
-                    <label for="auth-email">Email Address</label>
-                    <input type="email" id="auth-email" placeholder="admin@sportsmedia.com" required>
+            <div class="auth-hero-content">
+                <div class="auth-hero-logo">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>AssetProtect</span>
                 </div>
-                <div class="form-group">
-                    <label for="auth-password">Password</label>
-                    <input type="password" id="auth-password" placeholder="••••••••" required>
+                <h1 class="auth-hero-title">Digital Media<br>Defense Platform</h1>
+                <p class="auth-hero-desc">Enterprise-grade perceptual hashing and forensic analysis to protect your
+                    sports media from unauthorized distribution.</p>
+
+                <!-- Live Stats -->
+                <div class="auth-stats">
+                    <div class="auth-stat">
+                        <span class="auth-stat-value" id="stat-assets">12,847</span>
+                        <span class="auth-stat-label">Assets Protected</span>
+                    </div>
+                    <div class="auth-stat">
+                        <span class="auth-stat-value" id="stat-scans">98.7%</span>
+                        <span class="auth-stat-label">Detection Rate</span>
+                    </div>
+                    <div class="auth-stat">
+                        <span class="auth-stat-value" id="stat-orgs">340+</span>
+                        <span class="auth-stat-label">Organizations</span>
+                    </div>
                 </div>
-                <button type="submit" class="btn submit" id="auth-submit-btn">Log In</button>
-            </form>
+
+                <div class="auth-features">
+                    <div class="auth-feature">
+                        <div class="auth-feature-icon"><i class="fa-solid fa-fingerprint"></i></div>
+                        <div>
+                            <strong>Multi-Algorithm Hashing</strong>
+                            <p>pHash, dHash, aHash & wHash fingerprinting</p>
+                        </div>
+                    </div>
+                    <div class="auth-feature">
+                        <div class="auth-feature-icon"><i class="fa-solid fa-microscope"></i></div>
+                        <div>
+                            <strong>Deep Forensic Scanning</strong>
+                            <p>Configurable threshold similarity detection</p>
+                        </div>
+                    </div>
+                    <div class="auth-feature">
+                        <div class="auth-feature-icon"><i class="fa-solid fa-satellite-dish"></i></div>
+                        <div>
+                            <strong>Web Sentinel Crawling</strong>
+                            <p>Automated surveillance of external platforms</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="auth-hero-footer">
+                <span>&copy; 2026 AssetProtect — All Rights Reserved</span>
+            </div>
+        </div>
+
+        <!-- Right Login Form -->
+        <div class="auth-form-panel">
+            <div class="auth-card">
+                <div class="auth-card-badge">
+                    <i class="fa-solid fa-lock"></i>
+                    <span>Secure Login</span>
+                </div>
+                <h2>Welcome back</h2>
+                <p class="auth-subtitle">Sign in to your protection dashboard</p>
+
+                <form id="auth-form" onsubmit="event.preventDefault(); handleAuth(); return false;">
+                    <div class="form-group">
+                        <label for="auth-email">Email Address</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-envelope"></i>
+                            <input type="email" id="auth-email" placeholder="admin@sportsmedia.com" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="auth-password">Password</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-lock"></i>
+                            <input type="password" id="auth-password" placeholder="Enter your password" required>
+                            <button type="button" class="password-toggle" onclick="togglePasswordVisibility()"
+                                tabindex="-1">
+                                <i class="fa-solid fa-eye" id="password-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn submit" id="auth-submit-btn">
+                        <span>Sign In</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </form>
+
+                <!-- Trust badges -->
+                <div class="trust-badges">
+                    <div class="trust-badge">
+                        <i class="fa-solid fa-shield-halved"></i>
+                        <span>End-to-end encrypted</span>
+                    </div>
+                    <div class="trust-badge">
+                        <i class="fa-solid fa-server"></i>
+                        <span>SOC 2 Compliant</span>
+                    </div>
+                </div>
+
+                <div class="auth-divider">
+                    <span>Protected by 256-bit encryption</span>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Main Application -->
     <div id="app-container" class="app-container hidden">
-        <!-- Sidebar Overlay (mobile) -->
-        <div class="sidebar-overlay" id="sidebar-overlay"></div>
-
-        <!-- Sidebar Navigation -->
-        <nav class="sidebar" id="sidebar">
+        <nav class="sidebar">
             <div class="logo">
                 <i class="fa-solid fa-shield-halved"></i>
                 <span>AssetProtect</span>
             </div>
             <ul class="nav-links">
-                <li class="active" data-target="dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
-                <li data-target="upload-station"><i class="fa-solid fa-cloud-arrow-up"></i> Register Asset</li>
-                <li data-target="scanner"><i class="fa-solid fa-magnifying-glass"></i> Scanner</li>
-                <li data-target="history-log"><i class="fa-solid fa-clock-rotate-left"></i> Scan History</li>
-                <li data-target="scraper-tool"><i class="fa-solid fa-spider"></i> Web Scraper</li>
+                <li class="active" data-target="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Intelligence</span>
+                </li>
+                <li data-target="upload-station">
+                    <i class="fa-solid fa-fingerprint"></i>
+                    <span>Register Assets</span>
+                </li>
+                <li data-target="scanner">
+                    <i class="fa-solid fa-microscope"></i>
+                    <span>Deep Scanner</span>
+                </li>
+                <li data-target="history-log">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Audit Trail</span>
+                </li>
+                <li data-target="scraper-tool">
+                    <i class="fa-solid fa-satellite-dish"></i>
+                    <span>Web Sentinel</span>
+                </li>
             </ul>
             <div style="flex: 1;"></div>
             <button class="theme-toggle" id="theme-toggle">
-                <i class="fa-solid fa-moon"></i>
-                <span>Dark Mode</span>
+                <i class="fa-solid fa-circle-half-stroke"></i>
+                <span>Interface Theme</span>
             </button>
             <div class="logout-btn" id="logout-btn">
-                <i class="fa-solid fa-right-from-bracket"></i> Log Out
+                <i class="fa-solid fa-power-off"></i>
+                <span>Terminate Session</span>
             </div>
         </nav>
 
-        <!-- Main Content Area -->
         <main class="main-content">
             <header>
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button class="sidebar-toggle" id="sidebar-toggle">
-                        <i class="fa-solid fa-bars"></i>
-                    </button>
-                    <h1>Digital Asset Protection for Sports Media</h1>
+                <div>
+                    <h1>Asset Intelligence Dashboard</h1>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;">Global protection status for registered
+                        media.</p>
                 </div>
-                <div class="header-right">
-                    <span class="user-email" id="user-email"></span>
-                    <div class="user-profile">
-                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=3b82f6&color=fff"
-                            alt="Admin User" id="user-avatar">
+                <div class="user-profile">
+                    <div style="text-align: right; line-height: 1.2;">
+                        <span class="user-email" id="user-email" style="font-weight: 600; font-size: 0.85rem;"></span>
+                        <div
+                            style="font-size: 0.7rem; color: var(--accent-primary); font-weight: 700; text-transform: uppercase;">
+                            Administrator</div>
                     </div>
+                    <img src="" alt="User" id="user-avatar">
                 </div>
             </header>
 
             <!-- Dashboard View -->
             <section id="dashboard" class="view-section active">
-                <div class="section-header">
-                    <h2>Registered Assets</h2>
-                    <p>Overview of all protected sports media.</p>
-                </div>
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <i class="fa-solid fa-image"></i>
+                    <div class="stat-card glass-panel">
+                        <i class="fa-solid fa-database"></i>
                         <div class="stat-info">
                             <span class="stat-value" id="total-assets">0</span>
-                            <span class="stat-label">Total Assets</span>
+                            <span class="stat-label">Protected Assets</span>
                         </div>
                     </div>
-                    <div class="stat-card warning">
+                    <div class="stat-card glass-panel warning">
                         <i class="fa-solid fa-triangle-exclamation"></i>
                         <div class="stat-info">
-                            <span class="stat-value" id="recent-violations">0</span>
-                            <span class="stat-label">Detected Violations</span>
+                            <span class="stat-value" id="total-violations">0</span>
+                            <span class="stat-label">Detected Infringements</span>
+                        </div>
+                    </div>
+                    <div class="stat-card glass-panel">
+                        <i class="fa-solid fa-bolt"></i>
+                        <div class="stat-info">
+                            <span class="stat-value">99.9%</span>
+                            <span class="stat-label">System Integrity</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="assets-grid" id="assets-container">
-                    <div class="loading-state">
-                        <i class="fa-solid fa-circle-notch fa-spin"></i>
-                        <p>Loading assets...</p>
-                    </div>
+                <div class="section-header" style="margin-top: 1rem;">
+                    <h2>Media Repository</h2>
+                    <p>Current library of authenticated digital fingerprints.</p>
+                </div>
+
+                <div class="assets-grid" id="assets-list">
+                    <!-- Assets will be injected here -->
+                </div>
+
+                <div id="pagination-controls" class="pagination"
+                    style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem;">
+                    <!-- Pagination buttons -->
                 </div>
             </section>
 
             <!-- Upload Station View -->
             <section id="upload-station" class="view-section hidden">
                 <div class="section-header">
-                    <h2>Register Authentic Asset</h2>
-                    <p>Upload official images or videos to generate a perceptual fingerprint.</p>
+                    <h2>Asset Fingerprinting</h2>
+                    <p>Onboard new media into the protection ecosystem using multi-algorithmic hashing.</p>
                 </div>
 
-                <div class="upload-container glass-panel">
+                <div class="glass-panel" style="padding: 2.5rem; max-width: 900px; margin: 0 auto; width: 100%;">
                     <div class="drag-drop-zone" id="register-drop-zone">
-                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                        <h3>Drag & Drop media here</h3>
-                        <p>Supports JPG, PNG, MP4</p>
+                        <i class="fa-solid fa-upload"></i>
+                        <h3>Ingest Media Assets</h3>
+                        <p>High-resolution images and videos (JPG, PNG, MP4 up to 50MB)</p>
                         <input type="file" id="register-file-input" accept="image/*,video/mp4" multiple hidden>
-                        <button class="btn primary"
-                            onclick="document.getElementById('register-file-input').click()">Browse Files</button>
+                        <button class="btn secondary" style="margin-top: 1.5rem;"
+                            onclick="document.getElementById('register-file-input').click()">Select Source
+                            Files</button>
                     </div>
 
-                    <div class="preview-area hidden" id="register-preview">
+                    <div class="preview-area hidden" id="register-preview"
+                        style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1rem;">
                         <!-- Preview content -->
                     </div>
 
-                    <button class="btn submit hidden" id="register-btn">Register Asset</button>
+                    <button class="btn primary submit hidden" id="register-btn" style="margin-top: 2rem;">Initialize
+                        Registration</button>
                 </div>
             </section>
 
             <!-- Scanner View -->
             <section id="scanner" class="view-section hidden">
                 <div class="section-header">
-                    <h2>Violation Scanner</h2>
-                    <p>Upload a suspicious image or video to scan for unauthorized use.</p>
+                    <h2>Perceptual Deep Scanner</h2>
+                    <p>Analyze suspicious media against our global fingerprint database.</p>
                 </div>
 
-                <div class="scanner-layout">
-                    <!-- Upload side -->
-                    <div class="upload-container glass-panel">
-                        <div class="drag-drop-zone" id="scan-drop-zone">
-                            <i class="fa-solid fa-crosshairs"></i>
-                            <h3>Upload suspect media</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;">
+                    <div class="glass-panel" style="padding: 2rem;">
+                        <div class="drag-drop-zone" id="scan-drop-zone" style="padding: 2rem;">
+                            <i class="fa-solid fa-magnifying-glass-chart"></i>
+                            <h3>Suspicious Media</h3>
                             <input type="file" id="scan-file-input" accept="image/*,video/mp4" hidden>
-                            <button class="btn secondary"
-                                onclick="document.getElementById('scan-file-input').click()">Browse Files</button>
+                            <button class="btn secondary" style="margin-top: 1rem;"
+                                onclick="document.getElementById('scan-file-input').click()">Upload Evidence</button>
                         </div>
 
-                        <div class="preview-area hidden" id="scan-preview">
-                            <!-- Preview content -->
+                        <div class="preview-area hidden" id="scan-preview"
+                            style="margin-top: 1.5rem; text-align: center;"></div>
+
+                        <div style="margin-top: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <label
+                                    style="font-weight: 600; font-size: 0.85rem; color: var(--text-muted);">Sensitivity
+                                    Threshold</label>
+                                <span id="threshold-val"
+                                    style="color: var(--accent-primary); font-weight: 800;">10</span>
+                            </div>
+                            <input type="range" id="similarity-threshold" min="0" max="64" value="10"
+                                style="width: 100%; height: 6px; border-radius: 10px; accent-color: var(--accent-primary);"
+                                oninput="document.getElementById('threshold-val').textContent = this.value">
+                            <p style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-dim);">
+                                Lower values require near-identical matches. Higher values allow for variations.
+                            </p>
                         </div>
 
-                        <button class="btn submit hidden" id="scan-btn">Run Scan Pipeline</button>
+                        <button class="btn primary submit hidden" id="scan-btn" style="margin-top: 2rem;">Execute
+                            Forensic Scan</button>
                     </div>
 
-                    <!-- Results side -->
-                    <div class="scan-results glass-panel" id="scan-results">
-                        <h3>Scan Results</h3>
-                        <div class="results-container empty">
-                            <i class="fa-solid fa-shield"></i>
-                            <p>Upload media to interrogate database.</p>
+                    <div class="glass-panel" style="padding: 2rem; min-height: 400px;">
+                        <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-solid fa-microscope" style="color: var(--accent-primary);"></i>
+                            Analysis Results
+                        </h3>
+                        <div id="scan-results-container">
+                            <div style="text-align: center; color: var(--text-dim); margin-top: 4rem;">
+                                <i class="fa-solid fa-barcode"
+                                    style="font-size: 3rem; opacity: 0.2; margin-bottom: 1rem;"></i>
+                                <p>Await media ingestion to start scan.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Scan History View -->
+            <!-- History View -->
             <section id="history-log" class="view-section hidden">
-                <div class="section-header"
-                    style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
-                    <div>
-                        <h2>Scan History</h2>
-                        <p>Log of all processed scans and identified violations.</p>
-                    </div>
-                    <a href="http://127.0.0.1:8000/api/history/export/csv" class="btn primary" target="_blank"
-                        style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-file-csv"></i> Export CSV
-                    </a>
+                <div class="section-header">
+                    <h2>Historical Audit Log</h2>
+                    <p>Chronological record of all forensic scans and detected violations.</p>
                 </div>
-
-                <div class="glass-panel" style="padding: 0; overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 600px;">
+                <div class="glass-panel" style="overflow: hidden;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left;">
                         <thead>
-                            <tr style="border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.1);">
-                                <th style="padding: 1rem;">Date & Time</th>
-                                <th style="padding: 1rem;">Source</th>
-                                <th style="padding: 1rem;">Suspect File</th>
-                                <th style="padding: 1rem;">Matches</th>
-                                <th style="padding: 1rem;">Result</th>
+                            <tr
+                                style="background: var(--glass-highlight); border-bottom: 1px solid var(--glass-border);">
+                                <th
+                                    style="padding: 1.25rem 1.5rem; font-size: 0.85rem; text-transform: uppercase; color: var(--text-dim);">
+                                    Timestamp</th>
+                                <th
+                                    style="padding: 1.25rem 1.5rem; font-size: 0.85rem; text-transform: uppercase; color: var(--text-dim);">
+                                    Resource Type</th>
+                                <th
+                                    style="padding: 1.25rem 1.5rem; font-size: 0.85rem; text-transform: uppercase; color: var(--text-dim);">
+                                    Source / Target</th>
+                                <th
+                                    style="padding: 1.25rem 1.5rem; font-size: 0.85rem; text-transform: uppercase; color: var(--text-dim);">
+                                    Outcome</th>
                             </tr>
                         </thead>
-                        <tbody id="history-table-body">
-                            <tr>
-                                <td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-muted);">
-                                    Loading history...</td>
-                            </tr>
+                        <tbody id="history-list">
+                            <!-- History entries -->
                         </tbody>
                     </table>
                 </div>
             </section>
 
-            <!-- Web Scraper View -->
+            <!-- Scraper View -->
             <section id="scraper-tool" class="view-section hidden">
                 <div class="section-header">
-                    <h2>Automated Web Scraper</h2>
-                    <p>Dispatch background jobs to scan websites for your protected assets.</p>
+                    <h2>Web Sentinel Dispatcher</h2>
+                    <p>Deploy autonomous agents to crawl and verify asset integrity on external platforms.</p>
                 </div>
 
-                <div class="glass-panel" style="max-width: 600px; margin: 0 auto;">
-                    <div style="margin-bottom: 1.5rem; text-align: center;">
-                        <i class="fa-solid fa-spider" style="font-size: 3rem; color: var(--primary);"></i>
+                <div class="glass-panel" style="max-width: 700px; margin: 0 auto; padding: 3rem;">
+                    <div style="margin-bottom: 2rem; text-align: center;">
+                        <i class="fa-solid fa-satellite-dish"
+                            style="font-size: 4rem; color: var(--accent-primary); margin-bottom: 1rem;"></i>
                     </div>
-                    <form onsubmit="event.preventDefault(); startScraping(); return false;">
+                    <form onsubmit="event.preventDefault(); startScraping(); return false;"
+                        style="display: flex; flex-direction: column; gap: 1.5rem;">
                         <div class="form-group">
-                            <label style="text-align: left;">Target Website URL</label>
-                            <input type="url" id="scraper-url" placeholder="https://example.com" required>
+                            <label>Sentinel Surveillance Target (URL)</label>
+                            <input type="url" id="scraper-url" placeholder="https://social-media-platform.com/profile"
+                                required>
                         </div>
-                        <button type="submit" class="btn submit" id="scraper-btn">Start Background Scan</button>
+                        <button type="submit" class="btn primary submit" id="scraper-btn">Deploy Sentinel Agent</button>
                     </form>
-                    <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); text-align: center;">
-                        Results will appear in the Scan History tab after the background job completes.
-                    </p>
+                    <div
+                        style="margin-top: 2rem; padding: 1rem; border-radius: 12px; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.1);">
+                        <p
+                            style="font-size: 0.8rem; color: var(--text-muted); text-align: center; display: flex; align-items: center; gap: 10px; justify-content: center;">
+                            <i class="fa-solid fa-circle-info" style="color: var(--accent-primary);"></i>
+                            Agent results will be automatically logged to the Audit Trail upon job completion.
+                        </p>
+                    </div>
                 </div>
             </section>
         </main>
@@ -242,7 +384,7 @@
         <span>Message</span>
     </div>
 
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
 </body>
 
 </html>

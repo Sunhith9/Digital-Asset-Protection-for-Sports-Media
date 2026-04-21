@@ -5,3 +5,7 @@ backend/assets.json
 backend/history.json
 backend/uploads/
 .env
+backend/users.db
+test_login_response.py
+test_login.py
+*.db

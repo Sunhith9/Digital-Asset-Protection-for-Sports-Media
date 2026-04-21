@@ -6,3 +6,8 @@ Pillow
 ImageHash
 httpx
 python-dotenv
+slowapi
+sqlalchemy
+passlib
+bcrypt
+PyJWT

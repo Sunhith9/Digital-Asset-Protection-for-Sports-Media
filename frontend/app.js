@@ -1,9 +1,11 @@
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = window.location.origin + '/api';
 
 // --- STATE ---
 let session = null;
 let registerFiles = [];
 let scanFileContainer = null;
+let currentPage = 1;
+const assetsPerPage = 8;
 
 // --- DOM Elements ---
 const authContainer = document.getElementById('auth-container');
@@ -21,7 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
         authContainer.classList.remove('hidden');
         appContainer.classList.add('hidden');
         document.getElementById('user-email').innerText = '';
-        showToast('Logged out', 'success');
+        showToast('Logged out', 'info');
     });
 
     // App listeners
@@ -32,13 +34,23 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('scan-btn').addEventListener('click', submitScan);
 
     // Sidebar toggle (mobile)
-    document.getElementById('sidebar-toggle').addEventListener('click', toggleSidebar);
-    document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+    const sidebar = document.querySelector('.sidebar');
+    document.getElementById('sidebar-toggle')?.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+    });
 
     // Theme toggle
     initTheme();
     document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 });
+
+function getAuthHeaders() {
+    const headers = { 'Content-Type': 'application/json' };
+    if (session && session.access_token) {
+        headers['Authorization'] = `Bearer ${session.access_token}`;
+    }
+    return headers;
+}
 
 // ========================
 // AUTHENTICATION
@@ -48,87 +60,65 @@ async function handleAuth() {
     const password = document.getElementById('auth-password').value.trim();
 
     if (!email || !password) {
-        showToast('Please fill in both fields', 'error');
+        showToast('Identification required', 'error');
         return;
     }
 
-    // Show spinner
     authSubmitBtn.disabled = true;
-    authSubmitBtn.innerHTML = '<span class="btn-spinner"></span> Signing in...';
+    authSubmitBtn.innerHTML = 'Authenticating...';
 
-    // Small delay to show the spinner animation
-    await new Promise(r => setTimeout(r, 600));
+    try {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
 
-    if (email === 'admin@sportsmedia.com' && password === 'password123') {
-        session = {
-            access_token: 'MOCK_TOKEN',
-            user: { email: email }
-        };
-        showToast('Logged in successfully!', 'success');
+        let data = {};
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            data = await response.json();
+        } else {
+            const text = await response.text();
+            if (!response.ok) {
+                throw new Error(`Server error (${response.status}): ${text || 'Unknown error'}`);
+            }
+        }
 
-        // Update UI with user info
-        document.getElementById('user-email').innerText = email;
-        const name = email.split('@')[0].replace(/[._]/g, ' ');
-        document.getElementById('user-avatar').src =
-            `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=3b82f6&color=fff`;
+        if (response.ok) {
+            session = {
+                access_token: data.access_token,
+                user: data.user
+            };
+            showToast('Login successful', 'success');
 
-        authContainer.classList.add('hidden');
-        appContainer.classList.remove('hidden');
-        loadAssets();
-    } else {
-        showToast('Invalid credentials. Use admin@sportsmedia.com / password123', 'error');
+            const userEmailEl = document.getElementById('user-email');
+            if (userEmailEl) userEmailEl.innerText = data.user?.email || email;
+            
+            const name = (data.user?.email || email).split('@')[0].replace(/[._]/g, ' ');
+            const avatarEl = document.getElementById('user-avatar');
+            if (avatarEl) {
+                avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=14b8a6&color=fff`;
+            }
+
+            authContainer.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+
+            currentPage = 1;
+            loadAssets();
+        } else {
+            throw new Error(data.detail || 'Authorization failed');
+        }
+    } catch (error) {
+        console.error('Auth Error:', error);
+        const msg = error.message.includes('Unexpected end of JSON input') 
+            ? 'Server returned an empty response. Please try again.' 
+            : (error.message === 'Failed to fetch' ? 'Cannot connect to server. Please ensure the backend is running.' : error.message);
+        showToast(msg, 'error');
     }
 
-    // Reset button
     authSubmitBtn.disabled = false;
-    authSubmitBtn.innerHTML = 'Log In';
-}
-
-function getAuthHeaders() {
-    const headers = {};
-    if (session) {
-        headers['Authorization'] = `Bearer ${session.access_token}`;
-    }
-    return headers;
-}
-
-// ========================
-// SIDEBAR (MOBILE)
-// ========================
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-    document.getElementById('sidebar-overlay').classList.toggle('active');
-}
-
-function closeSidebar() {
-    document.getElementById('sidebar').classList.remove('open');
-    document.getElementById('sidebar-overlay').classList.remove('active');
-}
-
-// ========================
-// THEME TOGGLE
-// ========================
-function initTheme() {
-    const saved = localStorage.getItem('dap-theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', saved);
-    updateThemeButton(saved);
-}
-
-function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', next);
-    localStorage.setItem('dap-theme', next);
-    updateThemeButton(next);
-}
-
-function updateThemeButton(theme) {
-    const btn = document.getElementById('theme-toggle');
-    if (theme === 'dark') {
-        btn.innerHTML = '<i class="fa-solid fa-moon"></i> <span>Dark Mode</span>';
-    } else {
-        btn.innerHTML = '<i class="fa-solid fa-sun"></i> <span>Light Mode</span>';
-    }
+    authSubmitBtn.innerHTML = '<span>Sign In</span><i class="fa-solid fa-arrow-right"></i>';
 }
 
 // ========================
@@ -142,434 +132,314 @@ function setupNavigation() {
             navLinks.forEach(l => l.classList.remove('active'));
             link.classList.add('active');
 
-            views.forEach(v => v.classList.add('hidden'));
-            document.getElementById(target).classList.remove('hidden');
+            // Robust view switching
+            views.forEach(v => {
+                v.classList.add('hidden');
+                v.style.opacity = '1'; // Ensure no visibility conflicts
+            });
+
+            const nextView = document.getElementById(target);
+            if (nextView) {
+                nextView.classList.remove('hidden');
+                nextView.style.animation = 'fadeIn 0.3s ease-out';
+            }
 
             if (target === 'dashboard') loadAssets();
             if (target === 'history-log') loadHistory();
-            // Note: scraper-tool doesn't need to load data on view
 
-            // Close sidebar on mobile after nav
-            closeSidebar();
+            // Close sidebar on mobile after navigation
+            document.querySelector('.sidebar').classList.remove('open');
         });
     });
 }
 
 // ========================
-// DRAG & DROP
+// ASSET MANAGEMENT
 // ========================
-function setupDragDrop(prefix, callback) {
-    const dropZone = document.getElementById(`${prefix}-drop-zone`);
-    const fileInput = document.getElementById(`${prefix}-file-input`);
-
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-        dropZone.classList.remove('dragover');
-    });
-
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files.length) {
-            callback(e.dataTransfer.files, prefix);
-        }
-    });
-
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files.length) {
-            callback(e.target.files, prefix);
-        }
-    });
-}
-
-function handleRegisterFileSelect(fileList, prefix) {
-    registerFiles = Array.from(fileList);
-    showRegisterPreviews(prefix);
-    document.getElementById(`${prefix}-btn`).classList.remove('hidden');
-}
-
-function handleScanFileSelect(fileList, prefix) {
-    scanFileContainer = fileList[0];
-    showPreview(scanFileContainer, prefix);
-    document.getElementById(`${prefix}-btn`).classList.remove('hidden');
-}
-
-function showRegisterPreviews(prefix) {
-    const previewArea = document.getElementById(`${prefix}-preview`);
-    const dropZone = document.getElementById(`${prefix}-drop-zone`);
-
-    dropZone.classList.add('hidden');
-    previewArea.classList.remove('hidden');
-
-    let html = '<div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">';
-    registerFiles.forEach(file => {
-        const fileUrl = URL.createObjectURL(file);
-        const isVideo = file.type.startsWith('video/');
-        let mediaHtml = isVideo
-            ? `<video src="${fileUrl}" style="height: 100px; width: auto; border-radius: 4px;" muted loop></video>`
-            : `<img src="${fileUrl}" style="height: 100px; width: auto; border-radius: 4px;" alt="Preview">`;
-
-        html += `<div style="text-align: center;">
-            ${mediaHtml}
-            <div style="font-size: 0.75rem; color: var(--text-muted); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${file.name}</div>
-        </div>`;
-    });
-    html += '</div>';
-
-    html += `<button class="btn secondary" style="margin-top: 15px;" onclick="resetUpload('${prefix}')">Change Files</button>`;
-    previewArea.innerHTML = html;
-}
-
-function showPreview(file, prefix) {
-    const previewArea = document.getElementById(`${prefix}-preview`);
-    const dropZone = document.getElementById(`${prefix}-drop-zone`);
-
-    dropZone.classList.add('hidden');
-    previewArea.classList.remove('hidden');
-
-    const fileUrl = URL.createObjectURL(file);
-    const isVideo = file.type.startsWith('video/');
-
-    let mediaHtml = isVideo
-        ? `<video src="${fileUrl}" controls autoplay muted loop></video>`
-        : `<img src="${fileUrl}" alt="Preview">`;
-
-    previewArea.innerHTML = `
-        ${mediaHtml}
-        <div class="preview-name">${file.name}</div>
-        <button class="btn secondary" style="margin-top: 10px;" onclick="resetUpload('${prefix}')">Change File</button>
-    `;
-}
-
-window.resetUpload = (prefix) => {
-    document.getElementById(`${prefix}-drop-zone`).classList.remove('hidden');
-    document.getElementById(`${prefix}-preview`).classList.add('hidden');
-    document.getElementById(`${prefix}-btn`).classList.add('hidden');
-    document.getElementById(`${prefix}-file-input`).value = '';
-
-    if (prefix === 'register') registerFiles = [];
-    if (prefix === 'scan') {
-        scanFileContainer = null;
-        document.getElementById('scan-results').innerHTML = `
-            <h3>Scan Results</h3>
-            <div class="results-container empty">
-                <i class="fa-solid fa-shield"></i>
-                <p>Upload media to interrogate database.</p>
-            </div>
-        `;
-    }
-};
-
-// ========================
-// REGISTER ASSET
-// ========================
-async function submitRegistration() {
-    if (!registerFiles || registerFiles.length === 0) return;
-
-    const btn = document.getElementById('register-btn');
-    const ogText = btn.innerText;
-    btn.innerHTML = '<span class="btn-spinner"></span> Creating pHash & Securing...';
-    btn.disabled = true;
-
-    const formData = new FormData();
-    registerFiles.forEach(file => {
-        formData.append('files', file);
-    });
+async function loadAssets() {
+    const list = document.getElementById('assets-list');
+    if (!list) return;
+    list.innerHTML = '<div style="grid-column: 1/-1; text-align: center; padding: 3rem;"><i class="fa-solid fa-spinner fa-spin fa-2xl"></i></div>';
 
     try {
-        const response = await fetch(`${API_BASE_URL}/upload`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: formData
+        const response = await fetch(`${API_BASE_URL}/assets?page=${currentPage}&limit=${assetsPerPage}`, {
+            headers: getAuthHeaders()
         });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            showToast(`Successfully registered ${data.assets.length} assets!`, 'success');
-            resetUpload('register');
+        
+        let data = {};
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            data = await response.json();
         } else {
-            throw new Error(data.detail || 'Upload failed');
+            if (!response.ok) throw new Error(`Status ${response.status}`);
         }
-    } catch (error) {
-        showToast(error.message, 'error');
-    } finally {
-        btn.innerText = ogText;
-        btn.disabled = false;
+
+        // Match backend keys: data.data and data.pagination.total_items
+        const assets = data.data || [];
+        const pagination = data.pagination || {};
+        const total = (typeof pagination.total_items === 'number') ? pagination.total_items : assets.length;
+
+        document.getElementById('total-assets').innerText = total;
+        document.getElementById('total-violations').innerText = 0;
+
+        renderAssets(assets);
+        renderPagination(total, pagination.page || 1, pagination.limit || assetsPerPage);
+    } catch (err) {
+        showToast('Sync error', 'error');
     }
 }
 
-// ========================
-// SCAN ASSET
-// ========================
-async function submitScan() {
-    if (!scanFileContainer) return;
-
-    const btn = document.getElementById('scan-btn');
-    const ogText = btn.innerText;
-    btn.innerHTML = '<span class="btn-spinner"></span> Analyzing & Matching...';
-    btn.disabled = true;
-
-    document.getElementById('scan-results').innerHTML = `
-        <h3>Scan Results</h3>
-        <div class="results-container">
-            <div class="loading-state">
-                <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 3rem;"></i>
-                <p style="margin-top:1rem;">Computing perceptual hash and querying database...</p>
-            </div>
-        </div>
-    `;
-
-    const formData = new FormData();
-    formData.append('file', scanFileContainer);
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/scan`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-            body: formData
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            renderScanResults(data);
-            showToast('Scan complete.', 'success');
-        } else {
-            throw new Error(data.detail || 'Scan failed');
-        }
-    } catch (error) {
-        showToast(error.message, 'error');
-        document.getElementById('scan-results').innerHTML = `
-            <h3>Scan Results</h3>
-            <div class="results-container empty">
-                <i class="fa-solid fa-circle-exclamation" style="color:var(--danger)"></i>
-                <p>${error.message}</p>
-            </div>
-        `;
-    } finally {
-        btn.innerText = ogText;
-        btn.disabled = false;
-    }
-}
-
-function renderScanResults(data) {
-    const resultsArea = document.getElementById('scan-results');
-
-    if (!data.matches || data.matches.length === 0) {
-        resultsArea.innerHTML = `
-            <h3>Scan Results</h3>
-            <div class="results-container" style="align-items: center; justify-content: center; text-align: center;">
-                <i class="fa-solid fa-check-circle" style="font-size: 3rem; color: var(--success); margin-bottom: 1rem;"></i>
-                <h4>No Matches Found</h4>
-                <p style="color: var(--text-muted);">This asset does not appear to be an unauthorized copy of your registered media.</p>
-            </div>
-        `;
+function renderAssets(assets) {
+    const list = document.getElementById('assets-list');
+    if (!assets || assets.length === 0) {
+        list.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:4rem; color:var(--text-dim);">No assets registered.</div>';
         return;
     }
 
-    let matchesHtml = data.matches.map(match => {
-        const confNum = parseInt(match.confidence);
-        let badgeClass = 'med';
-        if (confNum > 80) badgeClass = 'high';
-        else if (confNum < 50) badgeClass = 'low';
+    list.innerHTML = assets.map(asset => {
+        const thumbSrc = asset.thumbnail || asset.url || '';
+        const imgTag = thumbSrc
+            ? `<img src="${thumbSrc}" alt="${asset.filename || 'Asset'}" onerror="this.style.display='none'">`
+            : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--text-dim);"><i class='fa-solid fa-image fa-2x'></i></div>`;
 
-        return `
-            <div class="match-card ${match.violation ? 'violation' : ''}">
-                <div style="width: 50px; height: 50px; background: rgba(255,255,255,0.1); border-radius: 4px; display:flex; align-items:center; justify-content:center;">
-                    <i class="fa-solid ${match.asset.media_type === 'video' ? 'fa-video' : 'fa-image'}"></i>
-                </div>
-                <div class="match-info">
-                    <div class="match-name">${match.asset.filename}</div>
-                    <div class="match-score">Similarity: ${match.confidence} | HD: ${match.distance}</div>
-                </div>
-                <div class="score-badge ${badgeClass}">${match.confidence} Match</div>
-            </div>
-        `;
-    }).join('');
-
-    resultsArea.innerHTML = `
-        <h3>Scan Results</h3>
-        <p style="color:var(--danger); margin-bottom:1rem; font-weight:600;">
-            <i class="fa-solid fa-triangle-exclamation"></i> Identified ${data.matches_found} potential violation(s)!
-        </p>
-        <div class="results-list" style="max-height: 400px; overflow-y: auto;">
-            ${matchesHtml}
-        </div>
-    `;
-}
-
-// ========================
-// LOAD & DELETE ASSETS
-// ========================
-async function loadAssets() {
-    const container = document.getElementById('assets-container');
-    container.innerHTML = `
-        <div class="loading-state">
-            <i class="fa-solid fa-circle-notch fa-spin"></i>
-            <p>Loading assets...</p>
-        </div>
-    `;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/assets`, {
-            headers: getAuthHeaders()
-        });
-        const result = await response.json();
-
-        if (!response.ok) throw new Error(result.detail || 'Failed');
-
-        let assets = result.data || [];
-
-        document.getElementById('total-assets').innerText = assets.length;
-
-        if (assets.length === 0) {
-            container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted);">No assets registered yet.</div>`;
-            return;
+        let dateStr = 'Unknown';
+        if (asset.timestamp) {
+            const d = typeof asset.timestamp === 'number' ? new Date(asset.timestamp * 1000) : new Date(asset.timestamp);
+            if (!isNaN(d)) dateStr = d.toLocaleDateString();
+        } else if (asset.created_at) {
+            const d = new Date(asset.created_at);
+            if (!isNaN(d)) dateStr = d.toLocaleDateString();
         }
 
-        container.innerHTML = assets.map(asset => `
-            <div class="asset-card">
-                <button class="asset-delete-btn" onclick="deleteAsset('${asset.id}')" title="Delete asset">
-                    <i class="fa-solid fa-trash"></i>
-                </button>
-                <div style="height: 150px; background: rgba(0,0,0,0.3); display:flex; align-items:center; justify-content:center; border-bottom: 1px solid var(--glass-border); overflow: hidden;">
-                    ${asset.thumbnail_url
-                ? `<img src="${API_BASE_URL.replace('/api', '')}${asset.thumbnail_url}" style="width: 100%; height: 100%; object-fit: cover;">`
-                : `<i class="fa-solid ${asset.media_type === 'video' ? 'fa-video' : 'fa-image'}" style="font-size: 3rem; color: var(--primary);"></i>`
-            }
-                </div>
-                <div class="asset-details">
-                    <div class="asset-name" title="${asset.filename}">${asset.filename}</div>
-                    <div class="asset-meta">
-                        <span>${new Date(asset.created_at).toLocaleDateString()}</span>
-                        <span><i class="fa-solid fa-fingerprint"></i> Hashes: ${asset.hashes.length}</span>
-                    </div>
-                </div>
+        return `
+        <div class="asset-card glass-panel">
+            <button class="asset-delete-btn" onclick="deleteAsset('${asset.id}')" 
+                    style="position:absolute; top:8px; right:8px; width:24px; height:24px; border-radius:50%; background:rgba(239,68,68,0.1); color:var(--danger); border:none; cursor:pointer; z-index:10;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="asset-thumb-container">
+                ${imgTag}
             </div>
-        `).join('');
-
-    } catch (error) {
-        container.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--danger);">Failed to load assets: ${error.message}</div>`;
-    }
+            <div class="asset-details">
+                <div class="asset-name" style="font-weight:600; margin-bottom:0.5rem; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">${asset.filename || 'Untitled'}</div>
+                <div style="font-size:0.75rem; color:var(--text-dim);">${dateStr}</div>
+            </div>
+        </div>`;
+    }).join('');
 }
 
-window.deleteAsset = async (assetId) => {
-    if (!confirm('Are you sure you want to delete this asset?')) return;
+function renderPagination(total, page, limit) {
+    const container = document.getElementById('pagination-controls');
+    const totalPages = Math.ceil(total / limit);
+    if (totalPages <= 1) { container.innerHTML = ''; return; }
 
+    let html = '';
+    for (let i = 1; i <= totalPages; i++) {
+        html += `<button class="btn ${i === page ? 'primary' : 'secondary'}" 
+                        style="padding: 0.4rem 0.8rem; margin: 0 2px;"
+                        onclick="changePage(${i})">${i}</button>`;
+    }
+    container.innerHTML = html;
+}
+
+window.changePage = (page) => {
+    currentPage = page;
+    loadAssets();
+};
+
+window.deleteAsset = async (assetId) => {
+    if (!confirm('Permanently delete fingerprint?')) return;
     try {
         const response = await fetch(`${API_BASE_URL}/assets/${assetId}`, {
             method: 'DELETE',
             headers: getAuthHeaders()
         });
-
         if (response.ok) {
-            showToast('Asset deleted successfully.', 'success');
+            showToast('Asset purged', 'success');
             loadAssets();
-        } else {
-            const data = await response.json();
-            throw new Error(data.detail || 'Delete failed');
         }
-    } catch (error) {
-        showToast(error.message, 'error');
-    }
+    } catch (err) { showToast('Sync error', 'error'); }
 };
 
 // ========================
-// AUTOMATED SCRAPER
+// UPLOAD & SCAN
 // ========================
-async function startScraping() {
-    const url = document.getElementById('scraper-url').value.trim();
-    if (!url) return;
+function setupDragDrop(prefix, callback) {
+    const zone = document.getElementById(`${prefix}-drop-zone`);
+    const input = document.getElementById(`${prefix}-file-input`);
+    if (!zone || !input) return;
 
-    const btn = document.getElementById('scraper-btn');
-    const ogText = btn.innerText;
-    btn.innerHTML = '<span class="btn-spinner"></span> Dispatching Worker...';
+    zone.addEventListener('click', () => input.click());
+    zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.style.borderColor = 'var(--accent-primary)'; });
+    zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
+    zone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        zone.style.borderColor = '';
+        callback(e.dataTransfer.files);
+    });
+    input.addEventListener('change', (e) => callback(e.target.files));
+}
+
+function handleRegisterFileSelect(files) {
+    registerFiles = Array.from(files);
+    const preview = document.getElementById('register-preview');
+    const btn = document.getElementById('register-btn');
+    if (!preview || !btn) return;
+
+    preview.classList.remove('hidden');
+    btn.classList.remove('hidden');
+    preview.innerHTML = registerFiles.map(f => `<div style="padding:4px; border:1px solid var(--glass-border); border-radius:4px;"><img src="${URL.createObjectURL(f)}" style="width:100%; height:80px; object-fit:cover;"></div>`).join('');
+}
+
+async function submitRegistration() {
+    const btn = document.getElementById('register-btn');
     btn.disabled = true;
+    const formData = new FormData();
+    registerFiles.forEach(f => formData.append('files', f));
 
+    try {
+        const response = await fetch(`${API_BASE_URL}/upload`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${session.access_token}` },
+            body: formData
+        });
+        if (response.ok) {
+            showToast('Registration successful', 'success');
+            registerFiles = [];
+            btn.classList.add('hidden');
+            document.getElementById('register-preview').classList.add('hidden');
+            document.querySelector('[data-target="dashboard"]').click();
+        }
+    } catch (err) { showToast('Upload error', 'error'); }
+    btn.disabled = false;
+}
+
+function handleScanFileSelect(files) {
+    if (files.length === 0) return;
+    scanFileContainer = files[0];
+    const preview = document.getElementById('scan-preview');
+    const btn = document.getElementById('scan-btn');
+    preview.classList.remove('hidden');
+    btn.classList.remove('hidden');
+    preview.innerHTML = `<img src="${URL.createObjectURL(scanFileContainer)}" style="max-height:150px; border-radius:8px;">`;
+}
+
+async function submitScan() {
+    if (!scanFileContainer) return;
+    const btn = document.getElementById('scan-btn');
+    const threshold = document.getElementById('similarity-threshold').value;
+    const container = document.getElementById('scan-results-container');
+
+    btn.disabled = true;
+    container.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fa-solid fa-spinner fa-spin fa-xl"></i></div>';
+
+    const formData = new FormData();
+    formData.append('file', scanFileContainer);
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/scan?threshold=${threshold}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${session.access_token}` },
+            body: formData
+        });
+        const data = await response.json();
+        if (response.ok) {
+            renderScanResults(data.matches);
+        }
+    } catch (err) { showToast('Scan error', 'error'); }
+    btn.disabled = false;
+}
+
+function renderScanResults(matches) {
+    const container = document.getElementById('scan-results-container');
+    if (matches.length === 0) {
+        container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--success);">No violations found.</div>';
+        return;
+    }
+    container.innerHTML = matches.map(m => `
+        <div style="display:flex; gap:12px; padding:12px; border:1px solid var(--danger); border-radius:8px; margin-bottom:8px; background:rgba(239,68,68,0.05);">
+            <img src="${m.asset.thumbnail || m.asset.url}" style="width:50px; height:50px; border-radius:4px; object-fit:cover;">
+            <div>
+                <div style="font-weight:600; font-size:0.9rem;">${m.asset.filename}</div>
+                <div style="font-size:0.75rem; color:var(--text-dim);">Distance: ${m.distance}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function loadHistory() {
+    const list = document.getElementById('history-list');
+    list.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:2rem;"><i class="fa-solid fa-spinner fa-spin"></i></td></tr>';
+    try {
+        const response = await fetch(`${API_BASE_URL}/history`, { headers: getAuthHeaders() });
+        const data = await response.json();
+        list.innerHTML = data.reverse().map(e => `
+            <tr style="border-bottom:1px solid var(--glass-border);">
+                <td style="padding:12px; font-size:0.75rem; color:var(--text-dim);">${e.timestamp}</td>
+                <td style="padding:12px;"><span style="font-size:0.7rem; font-weight:700;">${e.type}</span></td>
+                <td style="padding:12px; font-size:0.85rem;">${e.url || e.target || '-'}</td>
+                <td style="padding:12px; font-weight:700; color:${e.status === 'VIOLATION' ? 'var(--danger)' : 'var(--success)'};">${e.status || e.outcome}</td>
+            </tr>
+        `).join('');
+    } catch (err) { list.innerHTML = ''; }
+}
+
+async function startScraping() {
+    const url = document.getElementById('scraper-url').value;
+    const btn = document.getElementById('scraper-btn');
+    if (!url) return;
+    btn.disabled = true;
     try {
         const response = await fetch(`${API_BASE_URL}/scraper/jobs`, {
             method: 'POST',
-            headers: {
-                ...getAuthHeaders(),
-                'Content-Type': 'application/json'
-            },
+            headers: getAuthHeaders(),
             body: JSON.stringify({ url })
         });
-
-        const data = await response.json();
         if (response.ok) {
-            showToast(data.message, 'success');
+            showToast('Sentinel deployed', 'success');
             document.getElementById('scraper-url').value = '';
-        } else {
-            throw new Error(data.detail || 'Failed to start scraper');
         }
-    } catch (err) {
-        showToast(err.message, 'error');
-    } finally {
-        btn.innerText = ogText;
-        btn.disabled = false;
-    }
-}
-
-// ========================
-// HELPERS
-// ========================
-async function loadHistory() {
-    const tbody = document.getElementById('history-table-body');
-    tbody.innerHTML = '<tr><td colspan="5" style="padding: 2rem; text-align: center;"><i class="fa-solid fa-circle-notch fa-spin"></i> Loading...</td></tr>';
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/history`, {
-            headers: getAuthHeaders()
-        });
-        const result = await response.json();
-
-        if (!response.ok) throw new Error(result.detail || 'Failed to load history');
-
-        const history = result.data || [];
-        if (history.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-muted);">No scan history found.</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = history.map(item => {
-            const date = new Date(item.timestamp).toLocaleString();
-            let resultBadge = '<span class="score-badge low" style="padding: 0.3rem 0.6rem;"><i class="fa-solid fa-check"></i> Clean</span>';
-            if (item.matches_found > 0) {
-                resultBadge = `<span class="score-badge high" style="padding: 0.3rem 0.6rem;"><i class="fa-solid fa-triangle-exclamation"></i> ${item.matches_found} Violation(s)</span>`;
-            }
-
-            return `
-                <tr style="border-bottom: 1px solid var(--glass-border); transition: background 0.2s;">
-                    <td style="padding: 1rem; color: var(--text-muted);">${date}</td>
-                    <td style="padding: 1rem;">
-                        <span style="background: rgba(255,255,255,0.1); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
-                            ${item.source || 'Manual Scan'}
-                        </span>
-                    </td>
-                    <td style="padding: 1rem; font-weight: 500;">${item.suspect_filename}</td>
-                    <td style="padding: 1rem;">${item.matches_found}</td>
-                    <td style="padding: 1rem;">${resultBadge}</td>
-                </tr>
-            `;
-        }).join('');
-    } catch (error) {
-        tbody.innerHTML = `<tr><td colspan="5" style="padding: 2rem; text-align: center; color: var(--danger);">${error.message}</td></tr>`;
-    }
+    } catch (err) { showToast('Deployment error', 'error'); }
+    btn.disabled = false;
 }
 
 function showToast(message, type = 'success') {
     toastEl.querySelector('span').innerText = message;
-    const icon = toastEl.querySelector('i');
-    icon.className = `icon fa-solid ${type === 'success' ? 'fa-circle-check' : 'fa-circle-exclamation'}`;
     toastEl.className = `toast ${type}`;
+    toastEl.classList.remove('hidden');
+    setTimeout(() => toastEl.classList.add('hidden'), 3000);
+}
 
-    setTimeout(() => {
-        toastEl.classList.add('hidden');
-    }, 4000);
+function initTheme() {
+    const saved = localStorage.getItem('theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    updateThemeUI(saved);
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme');
+    const target = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', target);
+    localStorage.setItem('theme', target);
+    updateThemeUI(target);
+}
+
+function updateThemeUI(theme) {
+    const btn = document.getElementById('theme-toggle');
+    const icon = btn.querySelector('i');
+    if (theme === 'dark') { icon.className = 'fa-solid fa-sun'; }
+    else { icon.className = 'fa-solid fa-moon'; }
+}
+
+// Password visibility toggle
+function togglePasswordVisibility() {
+    const input = document.getElementById('auth-password');
+    const eye = document.getElementById('password-eye');
+    if (input.type === 'password') {
+        input.type = 'text';
+        eye.className = 'fa-solid fa-eye-slash';
+    } else {
+        input.type = 'password';
+        eye.className = 'fa-solid fa-eye';
+    }
 }
