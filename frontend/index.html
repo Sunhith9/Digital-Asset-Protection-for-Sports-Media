@@ -175,7 +175,7 @@
                 <i class="fa-solid fa-power-off"></i>
                 <span>Terminate Session</span>
             </div>
-        </nav>
+        </aside>
 
         <main class="main-content">
             <header>
@@ -280,25 +280,42 @@
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items: start;">
-                    <div class="glass-panel" style="padding: 2rem;">
-                            <input type="range" id="similarity-threshold" min="0" max="64" value="10"
-                                style="width: 100%; height: 6px; border-radius: 10px; accent-color: var(--accent-primary);"
-                                oninput="document.getElementById('threshold-val').textContent = this.value">
+                    <div class="form-card glass-panel" style="width: 100%; max-width: none;">
+                        <div class="form-header">
+                            <h3>Upload Forensic Evidence</h3>
+                            <p>Drag and drop suspect files to begin automated integrity analysis.</p>
+                        </div>
+                        <div id="scan-drop-zone" class="upload-zone">
+                            <i class="fa-solid fa-magnifying-glass-chart fa-3x"></i>
+                            <p>Drop suspect media or <span>browse files</span></p>
+                            <input type="file" id="scan-file-input" accept="image/*,video/mp4" hidden>
+                        </div>
+
+                        <div id="scan-preview" class="scan-preview-container hidden" style="margin-top: 1.5rem; text-align: center;"></div>
+
+                        <div class="scanner-settings">
+                            <label>Sensitivity Threshold: <span id="threshold-val" style="color: var(--accent-vivid);">10</span></label>
+                            <div class="slider-container">
+                                <input type="range" id="similarity-threshold" min="0" max="64" value="10"
+                                    oninput="document.getElementById('threshold-val').textContent = this.value">
+                            </div>
                             <p style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-dim);">
                                 Lower values require near-identical matches. Higher values allow for variations.
                             </p>
                         </div>
 
-                        <button class="btn primary submit hidden" id="scan-btn" style="margin-top: 2rem;">Execute
-                            Forensic Scan</button>
+                        <button class="btn primary submit" id="scan-btn" style="width: 100%;">
+                            <i class="fa-solid fa-microscope"></i>
+                            <span>Execute Forensic Scan</span>
+                        </button>
                     </div>
 
-                    <div class="glass-panel" style="padding: 2rem; min-height: 400px;">
+                    <div class="glass-panel" style="padding: 2rem; min-height: 400px; display: flex; flex-direction: column;">
                         <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 10px;">
                             <i class="fa-solid fa-microscope" style="color: var(--accent-primary);"></i>
                             Analysis Results
                         </h3>
-                        <div id="scan-results-container">
+                        <div id="scan-results-container" style="flex: 1;">
                             <div style="text-align: center; color: var(--text-dim); margin-top: 4rem;">
                                 <i class="fa-solid fa-barcode"
                                     style="font-size: 3rem; opacity: 0.2; margin-bottom: 1rem;"></i>
