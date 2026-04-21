@@ -352,19 +352,55 @@ async function submitScan() {
 
 function renderScanResults(matches) {
     const container = document.getElementById('scan-results-container');
-    if (matches.length === 0) {
-        container.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--success);">No violations found.</div>';
+    const thresholdAmount = document.getElementById('similarity-threshold').value;
+
+    if (!matches || matches.length === 0) {
+        container.innerHTML = `
+            <div style="text-align:center; padding:3rem; background:rgba(16, 185, 129, 0.05); border:1px solid rgba(16, 185, 129, 0.2); border-radius:12px;">
+                <i class="fa-solid fa-shield-check" style="font-size:3rem; color:var(--success); margin-bottom:1rem;"></i>
+                <h3 style="color:var(--success); margin-bottom:0.5rem;">Authentic & Safe</h3>
+                <p style="color:var(--text-muted); font-size:0.85rem;">No violations found. The media does not match any protected assets within the threshold of ${thresholdAmount}.</p>
+            </div>
+        `;
         return;
     }
-    container.innerHTML = matches.map(m => `
-        <div style="display:flex; gap:12px; padding:12px; border:1px solid var(--danger); border-radius:8px; margin-bottom:8px; background:rgba(239,68,68,0.05);">
-            <img src="${m.asset.thumbnail || m.asset.url}" style="width:50px; height:50px; border-radius:4px; object-fit:cover;">
-            <div>
-                <div style="font-weight:600; font-size:0.9rem;">${m.asset.filename}</div>
-                <div style="font-size:0.75rem; color:var(--text-dim);">Distance: ${m.distance}</div>
+
+    const resultsHtml = matches.map(m => {
+        // Hamming distance max is 64 for a 64-bit hash. Convert to percentage.
+        const matchPercentage = Math.round((1 - (m.distance / 64)) * 100);
+        return `
+        <div style="display:flex; gap:16px; padding:16px; border:1px solid rgba(239, 68, 68, 0.4); border-radius:12px; margin-bottom:12px; background:rgba(239, 68, 68, 0.05); animation: slideUp 0.3s ease-out;">
+            <div style="position:relative;">
+                <img src="${m.asset.thumbnail || m.asset.url}" style="width:70px; height:70px; border-radius:6px; object-fit:cover; border:1px solid rgba(255,255,255,0.1);">
+                <div style="position:absolute; top:-8px; right:-8px; background:var(--danger); color:white; font-size:0.6rem; font-weight:bold; padding:2px 6px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.5);">ALERT</div>
+            </div>
+            <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <div>
+                        <div style="font-weight:700; font-size:1.05rem; color:white; margin-bottom:4px;">${m.asset.filename || 'Protected Asset'}</div>
+                        <div style="font-size:0.75rem; font-family:'Outfit'; font-weight:800; color:var(--danger); text-transform:uppercase; letter-spacing:0.05em;"><i class="fa-solid fa-triangle-exclamation"></i> Copyright Violation Detected</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:1.5rem; font-weight:800; font-family:'Outfit'; color:var(--accent-vivid); line-height:1;">${matchPercentage}%</div>
+                        <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase;">Similarity Match</div>
+                    </div>
+                </div>
+                <div style="margin-top:10px; font-size:0.75rem; color:var(--text-muted); background:rgba(0,0,0,0.2); padding:6px 10px; border-radius:4px; display:inline-block;">
+                    <span>Raw Distance Score: <strong>${m.distance}</strong></span>
+                    <span style="margin:0 8px; color:var(--glass-border);">|</span>
+                    <span>Algorithm threshold used: <strong>${thresholdAmount}</strong></span>
+                </div>
             </div>
         </div>
-    `).join('');
+    `}).join('');
+
+    container.innerHTML = `
+        <div style="margin-bottom:1.5rem; padding-bottom:1rem; border-bottom:1px solid var(--glass-border);">
+            <div style="color:var(--danger); font-weight:700; font-family:'Outfit'; font-size:1.2rem;">${matches.length} Infringement(s) Located</div>
+            <p style="font-size:0.8rem; color:var(--text-dim); margin-top:4px;">The uploaded media strongly matches the following protected assets in your repository.</p>
+        </div>
+        ${resultsHtml}
+    `;
 }
 
 async function loadHistory() {
