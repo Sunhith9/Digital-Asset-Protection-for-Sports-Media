@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Asset Protection | Sports Media</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Authentication Screen -->
+    <div id="auth-container" class="auth-container">
+        <div class="auth-card glass-panel">
+            <div class="logo" style="justify-content: center; margin-bottom: 1.5rem;">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>AssetProtect</span>
+            </div>
+            <h2 id="auth-title">Welcome Back</h2>
+            <p id="auth-subtitle" style="text-align: center; color: var(--text-muted); margin-bottom: 2rem;">Sign in to
+                manage your digital assets.</p>
+
+            <form id="auth-form" onsubmit="event.preventDefault(); handleAuth(); return false;">
+                <div class="form-group">
+                    <label for="auth-email">Email Address</label>
+                    <input type="email" id="auth-email" placeholder="admin@sportsmedia.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="auth-password">Password</label>
+                    <input type="password" id="auth-password" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn submit" id="auth-submit-btn">Log In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Sidebar Overlay (mobile) -->
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar" id="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-shield-halved"></i>
+                <span>AssetProtect</span>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-target="dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</li>
+                <li data-target="upload-station"><i class="fa-solid fa-cloud-arrow-up"></i> Register Asset</li>
+                <li data-target="scanner"><i class="fa-solid fa-magnifying-glass"></i> Scanner</li>
+                <li data-target="history-log"><i class="fa-solid fa-clock-rotate-left"></i> Scan History</li>
+                <li data-target="scraper-tool"><i class="fa-solid fa-spider"></i> Web Scraper</li>
+            </ul>
+            <div style="flex: 1;"></div>
+            <button class="theme-toggle" id="theme-toggle">
+                <i class="fa-solid fa-moon"></i>
+                <span>Dark Mode</span>
+            </button>
+            <div class="logout-btn" id="logout-btn">
+                <i class="fa-solid fa-right-from-bracket"></i> Log Out
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button class="sidebar-toggle" id="sidebar-toggle">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <h1>Digital Asset Protection for Sports Media</h1>
+                </div>
+                <div class="header-right">
+                    <span class="user-email" id="user-email"></span>
+                    <div class="user-profile">
+                        <img src="https://ui-avatars.com/api/?name=Admin+User&background=3b82f6&color=fff"
+                            alt="Admin User" id="user-avatar">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <section id="dashboard" class="view-section active">
+                <div class="section-header">
+                    <h2>Registered Assets</h2>
+                    <p>Overview of all protected sports media.</p>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <i class="fa-solid fa-image"></i>
+                        <div class="stat-info">
+                            <span class="stat-value" id="total-assets">0</span>
+                            <span class="stat-label">Total Assets</span>
+                        </div>
+                    </div>
+                    <div class="stat-card warning">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <div class="stat-info">
+                            <span class="stat-value" id="recent-violations">0</span>
+                            <span class="stat-label">Detected Violations</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assets-grid" id="assets-container">
+                    <div class="loading-state">
+                        <i class="fa-solid fa-circle-notch fa-spin"></i>
+                        <p>Loading assets...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Upload Station View -->
+            <section id="upload-station" class="view-section hidden">
+                <div class="section-header">
+                    <h2>Register Authentic Asset</h2>
+                    <p>Upload official images or videos to generate a perceptual fingerprint.</p>
+                </div>
+
+                <div class="upload-container glass-panel">
+                    <div class="drag-drop-zone" id="register-drop-zone">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                        <h3>Drag & Drop media here</h3>
+                        <p>Supports JPG, PNG, MP4</p>
+                        <input type="file" id="register-file-input" accept="image/*,video/mp4" multiple hidden>
+                        <button class="btn primary"
+                            onclick="document.getElementById('register-file-input').click()">Browse Files</button>
+                    </div>
+
+                    <div class="preview-area hidden" id="register-preview">
+                        <!-- Preview content -->
+                    </div>
+
+                    <button class="btn submit hidden" id="register-btn">Register Asset</button>
+                </div>
+            </section>
+
+            <!-- Scanner View -->
+            <section id="scanner" class="view-section hidden">
+                <div class="section-header">
+                    <h2>Violation Scanner</h2>
+                    <p>Upload a suspicious image or video to scan for unauthorized use.</p>
+                </div>
+
+                <div class="scanner-layout">
+                    <!-- Upload side -->
+                    <div class="upload-container glass-panel">
+                        <div class="drag-drop-zone" id="scan-drop-zone">
+                            <i class="fa-solid fa-crosshairs"></i>
+                            <h3>Upload suspect media</h3>
+                            <input type="file" id="scan-file-input" accept="image/*,video/mp4" hidden>
+                            <button class="btn secondary"
+                                onclick="document.getElementById('scan-file-input').click()">Browse Files</button>
+                        </div>
+
+                        <div class="preview-area hidden" id="scan-preview">
+                            <!-- Preview content -->
+                        </div>
+
+                        <button class="btn submit hidden" id="scan-btn">Run Scan Pipeline</button>
+                    </div>
+
+                    <!-- Results side -->
+                    <div class="scan-results glass-panel" id="scan-results">
+                        <h3>Scan Results</h3>
+                        <div class="results-container empty">
+                            <i class="fa-solid fa-shield"></i>
+                            <p>Upload media to interrogate database.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Scan History View -->
+            <section id="history-log" class="view-section hidden">
+                <div class="section-header"
+                    style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+                    <div>
+                        <h2>Scan History</h2>
+                        <p>Log of all processed scans and identified violations.</p>
+                    </div>
+                    <a href="http://127.0.0.1:8000/api/history/export/csv" class="btn primary" target="_blank"
+                        style="text-decoration: none; display: inline-flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-file-csv"></i> Export CSV
+                    </a>
+                </div>
+
+                <div class="glass-panel" style="padding: 0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; min-width: 600px;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--glass-border); background: rgba(0,0,0,0.1);">
+                                <th style="padding: 1rem;">Date & Time</th>
+                                <th style="padding: 1rem;">Source</th>
+                                <th style="padding: 1rem;">Suspect File</th>
+                                <th style="padding: 1rem;">Matches</th>
+                                <th style="padding: 1rem;">Result</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body">
+                            <tr>
+                                <td colspan="5" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                                    Loading history...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Web Scraper View -->
+            <section id="scraper-tool" class="view-section hidden">
+                <div class="section-header">
+                    <h2>Automated Web Scraper</h2>
+                    <p>Dispatch background jobs to scan websites for your protected assets.</p>
+                </div>
+
+                <div class="glass-panel" style="max-width: 600px; margin: 0 auto;">
+                    <div style="margin-bottom: 1.5rem; text-align: center;">
+                        <i class="fa-solid fa-spider" style="font-size: 3rem; color: var(--primary);"></i>
+                    </div>
+                    <form onsubmit="event.preventDefault(); startScraping(); return false;">
+                        <div class="form-group">
+                            <label style="text-align: left;">Target Website URL</label>
+                            <input type="url" id="scraper-url" placeholder="https://example.com" required>
+                        </div>
+                        <button type="submit" class="btn submit" id="scraper-btn">Start Background Scan</button>
+                    </form>
+                    <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted); text-align: center;">
+                        Results will appear in the Scan History tab after the background job completes.
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden">
+        <i class="icon fa-solid"></i>
+        <span>Message</span>
+    </div>
+
+    <script src="app.js?v=3"></script>
+</body>
+
+</html>
