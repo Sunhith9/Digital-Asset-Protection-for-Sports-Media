@@ -9,3 +9,4 @@ backend/users.db
 test_login_response.py
 test_login.py
 *.db
+*.log
