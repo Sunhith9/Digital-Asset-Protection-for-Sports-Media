@@ -1,4 +1,4 @@
-const API_BASE_URL = window.location.origin + '/api';
+const API_BASE_URL = (window.location.protocol === 'file:' || window.location.port !== '8000') ? 'http://127.0.0.1:8000/api' : window.location.origin + '/api';
 
 // --- STATE ---
 let session = null;

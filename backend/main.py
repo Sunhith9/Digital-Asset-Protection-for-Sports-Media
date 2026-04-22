@@ -200,7 +200,7 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     return {"status": "success", "message": "User registered successfully"}
 
 @app.post("/api/auth/login")
-@limiter.limit("5/minute")
+@limiter.limit("50/minute")
 def login_user(request: Request, user: UserLogin, db: Session = Depends(get_db)):
     print(f"DEBUG: Login attempt for {user.email}")
     db_user = db.query(User).filter(User.email == user.email).first()
