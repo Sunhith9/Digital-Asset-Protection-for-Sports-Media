@@ -322,6 +322,16 @@
                                 <p>Await media ingestion to start scan.</p>
                             </div>
                         </div>
+                        
+                        <!-- AI Insights Section -->
+                        <div id="ai-insights-container" class="hidden" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
+                            <h4 style="margin-bottom: 1rem; color: var(--accent-vivid); display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-brain"></i> AI Forensic Insights
+                            </h4>
+                            <div id="ai-insights-content" style="font-size: 0.9rem; line-height: 1.6; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; border-left: 3px solid var(--accent-vivid);">
+                                <!-- AI Text gets injected here -->
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -392,13 +402,36 @@
         </main>
     </div>
 
+    <!-- DMCA Generator Modal -->
+    <div id="dmca-modal" class="hidden" style="position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; backdrop-filter: blur(5px); display: none;">
+        <div class="glass-panel" style="width: 90%; max-width: 800px; max-height: 90vh; display: flex; flex-direction: column; position: relative;">
+            <button onclick="closeDMCAModal()" style="position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; color: var(--text-dim); font-size: 1.5rem; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+            <h3 style="margin-bottom: 1rem; color: var(--accent-vivid); display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-scale-balanced"></i> DMCA Takedown Generator
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Review the generated legal notice below. Replace any bracketed placeholders like [Your Name] before sending. Disclaimer: This is an AI-generated draft and does not constitute formal legal advice.</p>
+            
+            <div id="dmca-loading" class="hidden" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4rem;">
+                <i class="fa-solid fa-spinner fa-spin fa-2xl" style="color: var(--accent-primary); margin-bottom: 1rem;"></i>
+                <p>Drafting formal legal notice...</p>
+            </div>
+            
+            <textarea id="dmca-content" style="flex: 1; width: 100%; min-height: 300px; background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 1rem; color: var(--text-main); font-family: monospace; font-size: 0.85rem; resize: vertical; margin-bottom: 1rem;"></textarea>
+            
+            <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+                <button class="btn secondary" onclick="closeDMCAModal()">Cancel</button>
+                <button class="btn primary" onclick="copyDMCAText()"><i class="fa-regular fa-copy"></i> Copy to Clipboard</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Notification Toast -->
     <div id="toast" class="toast hidden">
         <i class="icon fa-solid"></i>
         <span>Message</span>
     </div>
 
-    <script src="app.js?v=5"></script>
+    <script src="app.js?v=6"></script>
 </body>
 
 </html>

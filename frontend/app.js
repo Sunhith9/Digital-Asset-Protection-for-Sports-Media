@@ -329,9 +329,11 @@ async function submitScan() {
     const btn = document.getElementById('scan-btn');
     const threshold = document.getElementById('similarity-threshold').value;
     const container = document.getElementById('scan-results-container');
+    const aiContainer = document.getElementById('ai-insights-container');
 
     btn.disabled = true;
     container.innerHTML = '<div style="text-align:center; padding:2rem;"><i class="fa-solid fa-spinner fa-spin fa-xl"></i></div>';
+    if (aiContainer) aiContainer.classList.add('hidden');
 
     const formData = new FormData();
     formData.append('file', scanFileContainer);
@@ -345,9 +347,51 @@ async function submitScan() {
         const data = await response.json();
         if (response.ok) {
             renderScanResults(data.matches);
+            fetchAiInsights(data.matches);
+        } else {
+            container.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--danger);"><i class="fa-solid fa-triangle-exclamation fa-2xl"></i><br><br>Scan failed: ${data.detail || 'Server error'}</div>`;
+            showToast('Scan failed', 'error');
         }
-    } catch (err) { showToast('Scan error', 'error'); }
+    } catch (err) { 
+        container.innerHTML = `<div style="text-align:center; padding:2rem; color:var(--danger);"><i class="fa-solid fa-triangle-exclamation fa-2xl"></i><br><br>Network error while scanning.</div>`;
+        showToast('Scan error', 'error'); 
+    }
     btn.disabled = false;
+}
+
+async function fetchAiInsights(matches) {
+    const aiContainer = document.getElementById('ai-insights-container');
+    const aiContent = document.getElementById('ai-insights-content');
+    
+    if (!aiContainer || !aiContent) return;
+    
+    aiContainer.classList.remove('hidden');
+    aiContent.innerHTML = '<div style="display:flex; align-items:center; gap:10px;"><i class="fa-solid fa-circle-notch fa-spin"></i> Generating forensic summary...</div>';
+    
+    const formData = new FormData();
+    formData.append('file', scanFileContainer);
+    formData.append('matches_json', JSON.stringify(matches));
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/ai/analyze`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${session.access_token}` },
+            body: formData
+        });
+        
+        const data = await response.json();
+        if (response.ok) {
+            aiContent.innerHTML = data.summary.replace(/\\n/g, '<br>');
+        } else {
+            let errorMsg = data.detail || 'Unknown error';
+            if (errorMsg.includes('429') || errorMsg.includes('Quota') || errorMsg.toLowerCase().includes('quota exceeded')) {
+                errorMsg = 'API Quota Exceeded. Please check your AI platform usage limits.';
+            }
+            aiContent.innerHTML = `<span style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> AI Analysis failed: ${errorMsg}</span>`;
+        }
+    } catch (err) {
+        aiContent.innerHTML = `<span style="color:var(--danger);"><i class="fa-solid fa-triangle-exclamation"></i> Network error during AI analysis.</span>`;
+    }
 }
 
 function renderScanResults(matches) {
@@ -368,27 +412,59 @@ function renderScanResults(matches) {
     const resultsHtml = matches.map(m => {
         // Hamming distance max is 64 for a 64-bit hash. Convert to percentage.
         const matchPercentage = Math.round((1 - (m.distance / 64)) * 100);
+        
+        let riskColor = 'var(--info)';
+        let riskLabel = 'LOW THREAT LEVEL';
+        let riskIcon = 'fa-solid fa-circle-info';
+        
+        if (matchPercentage >= 90) {
+            riskColor = 'var(--danger)';
+            riskLabel = 'CRITICAL THREAT LEVEL';
+            riskIcon = 'fa-solid fa-radiation';
+        } else if (matchPercentage >= 75) {
+            riskColor = 'var(--warning)';
+            riskLabel = 'HIGH THREAT LEVEL';
+            riskIcon = 'fa-solid fa-triangle-exclamation';
+        } else if (matchPercentage >= 50) {
+            riskColor = '#eab308'; // Yellow
+            riskLabel = 'MODERATE THREAT LEVEL';
+            riskIcon = 'fa-solid fa-shield-halved';
+        }
+
         return `
-        <div style="display:flex; gap:16px; padding:16px; border:1px solid rgba(239, 68, 68, 0.4); border-radius:12px; margin-bottom:12px; background:rgba(239, 68, 68, 0.05); animation: slideUp 0.3s ease-out;">
+        <div style="display:flex; gap:16px; padding:16px; border:1px solid ${riskColor}; border-radius:12px; margin-bottom:12px; background:rgba(0, 0, 0, 0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2), inset 0 0 15px ${riskColor}15; animation: slideUp 0.3s ease-out;">
             <div style="position:relative;">
                 <img src="${m.asset.thumbnail || m.asset.url}" style="width:70px; height:70px; border-radius:6px; object-fit:cover; border:1px solid rgba(255,255,255,0.1);">
-                <div style="position:absolute; top:-8px; right:-8px; background:var(--danger); color:white; font-size:0.6rem; font-weight:bold; padding:2px 6px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.5);">ALERT</div>
+                <div style="position:absolute; top:-8px; right:-8px; background:${riskColor}; color:white; font-size:0.6rem; font-weight:bold; padding:2px 6px; border-radius:10px; box-shadow:0 2px 5px rgba(0,0,0,0.5);">ALERT</div>
             </div>
             <div style="flex:1;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <div>
                         <div style="font-weight:700; font-size:1.05rem; color:white; margin-bottom:4px;">${m.asset.filename || 'Protected Asset'}</div>
-                        <div style="font-size:0.75rem; font-family:'Outfit'; font-weight:800; color:var(--danger); text-transform:uppercase; letter-spacing:0.05em;"><i class="fa-solid fa-triangle-exclamation"></i> Copyright Violation Detected</div>
+                        <div style="font-size:0.75rem; font-family:'Outfit'; font-weight:800; color:${riskColor}; text-transform:uppercase; letter-spacing:0.05em;"><i class="${riskIcon}"></i> ${riskLabel}</div>
                     </div>
                     <div style="text-align:right;">
-                        <div style="font-size:1.5rem; font-weight:800; font-family:'Outfit'; color:var(--accent-vivid); line-height:1;">${matchPercentage}%</div>
+                        <div style="font-size:1.5rem; font-weight:800; font-family:'Outfit'; color:${riskColor}; line-height:1; text-shadow: 0 0 10px ${riskColor}40;">${matchPercentage}%</div>
                         <div style="font-size:0.65rem; color:var(--text-dim); text-transform:uppercase;">Similarity Match</div>
                     </div>
                 </div>
-                <div style="margin-top:10px; font-size:0.75rem; color:var(--text-muted); background:rgba(0,0,0,0.2); padding:6px 10px; border-radius:4px; display:inline-block;">
-                    <span>Raw Distance Score: <strong>${m.distance}</strong></span>
-                    <span style="margin:0 8px; color:var(--glass-border);">|</span>
-                    <span>Algorithm threshold used: <strong>${thresholdAmount}</strong></span>
+                
+                <div style="margin-top:12px; margin-bottom:4px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 4px;">
+                        <span>Threat Severity Meter</span>
+                    </div>
+                    <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; overflow: hidden; border: 1px solid var(--glass-border);">
+                        <div style="width: ${matchPercentage}%; height: 100%; background: ${riskColor}; border-radius: 3px; box-shadow: 0 0 8px ${riskColor};"></div>
+                    </div>
+                </div>
+
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:12px;">
+                    <div style="font-size:0.75rem; color:var(--text-muted); background:rgba(0,0,0,0.2); padding:6px 10px; border-radius:4px; display:inline-block;">
+                        <span>Raw Distance Score: <strong>${m.distance}</strong></span>
+                        <span style="margin:0 8px; color:var(--glass-border);">|</span>
+                        <span>Threshold: <strong>${thresholdAmount}</strong></span>
+                    </div>
+                    <button class="btn secondary" style="font-size: 0.75rem; padding: 6px 12px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); color: var(--accent-primary);" onclick="openDMCAModal('${scanFileContainer.name}', '${m.asset.filename || 'Protected Asset'}', ${matchPercentage})"><i class="fa-solid fa-scale-balanced"></i> Generate Legal Notice</button>
                 </div>
             </div>
         </div>
@@ -479,3 +555,64 @@ function togglePasswordVisibility() {
         eye.className = 'fa-solid fa-eye';
     }
 }
+
+// ========================
+// DMCA GENERATOR
+// ========================
+window.openDMCAModal = async (suspectName, assetName, matchPct) => {
+    const modal = document.getElementById('dmca-modal');
+    const content = document.getElementById('dmca-content');
+    const loading = document.getElementById('dmca-loading');
+    
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    content.classList.add('hidden');
+    loading.classList.remove('hidden');
+    content.value = '';
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/ai/dmca`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}` 
+            },
+            body: JSON.stringify({
+                suspect_filename: suspectName,
+                asset_filename: assetName,
+                match_percentage: matchPct
+            })
+        });
+        
+        const data = await response.json();
+        loading.classList.add('hidden');
+        content.classList.remove('hidden');
+        
+        if (response.ok) {
+            content.value = data.dmca_text;
+        } else {
+            let errorMsg = data.detail || 'Unknown error';
+            if (errorMsg.includes('429') || errorMsg.includes('Quota') || errorMsg.toLowerCase().includes('quota exceeded')) {
+                errorMsg = 'API Quota Exceeded. Please check your AI platform usage limits.';
+            }
+            content.value = `Error generating DMCA notice: ${errorMsg}`;
+        }
+    } catch (err) {
+        loading.classList.add('hidden');
+        content.classList.remove('hidden');
+        content.value = `Network error while generating DMCA notice.`;
+    }
+};
+
+window.closeDMCAModal = () => {
+    const modal = document.getElementById('dmca-modal');
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+};
+
+window.copyDMCAText = () => {
+    const content = document.getElementById('dmca-content');
+    content.select();
+    document.execCommand('copy');
+    showToast('Copied to clipboard', 'success');
+};

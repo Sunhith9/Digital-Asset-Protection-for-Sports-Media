@@ -7,12 +7,13 @@ import csv
 import json
 from datetime import datetime
 from PIL import Image
-from typing import List
+from typing import List, Optional
 from bs4 import BeautifulSoup
 import urllib.parse
 import requests
 from pydantic import BaseModel
-from fastapi import FastAPI, UploadFile, File, HTTPException, Header, Depends, BackgroundTasks, Request
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Header, Depends, BackgroundTasks, Request
+import google.generativeai as genai
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -28,6 +29,11 @@ from slowapi.errors import RateLimitExceeded
 
 # Load environment variables
 load_dotenv()
+
+# Configure Gemini
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
 
 app = FastAPI(title="Digital Asset Protection API")
 
@@ -362,6 +368,80 @@ async def scan_asset(file: UploadFile = File(...), threshold: int = 5, current_u
         if os.path.exists(temp_path):
             os.remove(temp_path)
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/analyze")
+async def ai_analyze(
+    file: Optional[UploadFile] = File(None),
+    matches_json: str = Form(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Generates a plain-English explanation of forensic scan results using Gemini."""
+    if not GEMINI_API_KEY:
+        return {"status": "success", "summary": "AI Analysis is currently disabled. Please add your GEMINI_API_KEY to the .env file to enable this feature."}
+        
+    try:
+        matches = json.loads(matches_json)
+        
+        # Prepare prompt
+        prompt = f"""You are an expert copyright forensics AI. 
+The user has scanned a suspect media file against a database of protected assets.
+Here are the match results: {json.dumps(matches, indent=2)}
+
+Please write a brief, professional, and clear 2-3 sentence summary explaining these results to the user.
+If there are violations, mention the match percentage and confirm the infringement.
+If there are no violations, confirm the asset appears authentic."""
+
+        # Handle image if provided
+        model = genai.GenerativeModel('gemini-pro-latest')
+        
+        if file:
+            contents = await file.read()
+            img = Image.open(io.BytesIO(contents))
+            # Convert to RGB if needed to avoid issues with transparency
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            response = model.generate_content([prompt, img])
+        else:
+            response = model.generate_content(prompt)
+            
+        return {"status": "success", "summary": response.text}
+    except Exception as e:
+        print(f"Gemini AI Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
+
+class DMCARequest(BaseModel):
+    suspect_filename: str
+    asset_filename: str
+    match_percentage: int
+
+@app.post("/api/ai/dmca")
+async def generate_dmca(
+    request: DMCARequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Generates a formal DMCA takedown notice using Gemini."""
+    if not GEMINI_API_KEY:
+        raise HTTPException(status_code=400, detail="AI Analysis is currently disabled. Please add your GEMINI_API_KEY to the .env file.")
+        
+    try:
+        prompt = f"""You are an expert intellectual property lawyer. 
+Write a formal, complete DMCA (Digital Millennium Copyright Act) takedown notice for the following copyright infringement.
+Details:
+- Original Copyrighted Work: "{request.asset_filename}"
+- Infringing Material: "{request.suspect_filename}"
+- Forensic Match Confidence: {request.match_percentage}%
+
+The notice MUST include all standard legal boilerplate required by the DMCA (17 U.S.C. § 512). 
+Use placeholders like [Your Name/Company], [Your Address], [ISP/Host Name], [Date] for missing information.
+Do not include conversational text before or after the notice, just output the legal document."""
+
+        model = genai.GenerativeModel('gemini-pro-latest')
+        response = model.generate_content(prompt)
+            
+        return {"status": "success", "dmca_text": response.text}
+    except Exception as e:
+        print(f"Gemini DMCA Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"DMCA generation failed: {str(e)}")
 
 @app.get("/api/assets")
 async def get_assets(page: int = 1, limit: int = 20, current_user: dict = Depends(get_current_user)):

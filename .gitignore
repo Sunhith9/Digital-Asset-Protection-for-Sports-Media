@@ -10,3 +10,4 @@ test_login_response.py
 test_login.py
 *.db
 *.log
+node_modules/

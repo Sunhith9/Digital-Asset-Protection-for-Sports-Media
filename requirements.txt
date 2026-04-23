@@ -11,3 +11,4 @@ sqlalchemy
 passlib
 bcrypt
 PyJWT
+google-generativeai
